@@ -1,0 +1,152 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-05 17:24+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: genpattern_dialog.py:72
+msgid "Number of copies:"
+msgstr ""
+
+#: genpattern_dialog.py:77
+msgid "Max rotation angle (degrees):"
+msgstr ""
+
+#: genpattern_dialog.py:82
+msgid "Max scale factor:"
+msgstr ""
+
+#: genpattern_dialog.py:102
+msgid "Default"
+msgstr ""
+
+#: genpattern.py:36
+msgid "Random pattern..."
+msgstr ""
+
+#: genpattern.py:40
+msgid ""
+"Generate a random seamless patterned texture from layers with transparency "
+"using libgenpattern."
+msgstr ""
+
+#: genpattern.py:41
+msgid ""
+"Uses libgenpattern to compose a seamless patterned texture from transformed "
+"layers."
+msgstr ""
+
+#: genpattern.py:45
+msgid "Copies per layer (default)"
+msgstr ""
+
+#: genpattern.py:47
+msgid "Alpha channel threshold"
+msgstr ""
+
+#: genpattern.py:49
+msgid "Min distance"
+msgstr ""
+
+#: genpattern.py:49
+msgid "Minimum distance between two layers"
+msgstr ""
+
+#: genpattern.py:51
+msgid "Min distance (same layer copies)"
+msgstr ""
+
+#: genpattern.py:52
+msgid "Minimum distance between two layers in the same collection"
+msgstr ""
+
+#: genpattern.py:56
+msgid "Linear"
+msgstr ""
+
+#: genpattern.py:57
+msgid "Exponential"
+msgstr ""
+
+#: genpattern.py:58
+msgid "Cooling schedule type"
+msgstr ""
+
+#: genpattern.py:61
+msgid "Cooling schedule param"
+msgstr ""
+
+#: genpattern.py:63
+msgid "Max rotation angle"
+msgstr ""
+
+#: genpattern.py:65
+msgid "Max scale factor"
+msgstr ""
+
+#: genpattern.py:67
+msgid "Random seed"
+msgstr ""
+
+#: genpattern.py:70 genpattern.py:75 genpattern.py:80
+msgid "Pickle buffer"
+msgstr ""
+
+#: genpattern.py:71
+msgid ""
+"Pickle buffer containig layer tattoo id to configured number of copies map"
+msgstr ""
+
+#: genpattern.py:76
+msgid "Pickle buffer containig layer tattoo id to configured max angle map"
+msgstr ""
+
+#: genpattern.py:81
+msgid ""
+"Pickle buffer containig layer tattoo id to configured max scale factor map"
+msgstr ""
+
+#: genpattern.py:136
+msgid "Placing images..."
+msgstr ""
+
+#: genpattern.py:137
+msgid "Placing images: {} of {}"
+msgstr ""
+
+#: genpattern.py:181
+msgid "Generating pattern..."
+msgstr ""
+
+#: genpattern.py:194
+msgid "Error in gp_genpattern: {}"
+msgstr ""
+
+#: genpattern.py:218
+msgid "Error"
+msgstr ""
+
+#: transformations.py:48
+msgid "Image does not contain any layers."
+msgstr ""
+
+#: transformations.py:62
+msgid "Preparing images..."
+msgstr ""
+
+#: transformations.py:63
+msgid "Preparing images: {} of {}"
+msgstr ""

@@ -1,103 +1,163 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# Russian translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#  <platofff@github.com>, 2025.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-11-02 18:47+0300\n"
-"PO-Revision-Date: 2022-11-02 21:18+0300\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"POT-Creation-Date: 2025-04-05 17:24+0300\n"
+"PO-Revision-Date: 2025-04-05 16:31+0300\n"
+"Last-Translator:  <platofff@github.com>\n"
+"Language-Team: Russian <gnu@d07.ru>\n"
+"Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Eazy Po 1.0.0.0\n"
-": #-#-#-#-#  messages.po  #-#-#-#-#\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: genpattern_dialog.py:72
+msgid "Number of copies:"
+msgstr "Количество копий:"
+
+#: genpattern_dialog.py:77
+msgid "Max rotation angle (degrees):"
+msgstr "Максимальный угол поворота (в градусах):"
+
+#: genpattern_dialog.py:82
+msgid "Max scale factor:"
+msgstr "Максимальный коэффициент масштабирования:"
+
+#: genpattern_dialog.py:102
+msgid "Default"
+msgstr "По умолчанию"
 
 #: genpattern.py:36
-msgid "Number of copies of layer"
-msgstr "Количество копий слоя"
+msgid "Random pattern..."
+msgstr "Случайный паттерн..."
 
-#: genpattern.py:62 ui.glade:116
-msgid "Number of copies"
-msgstr "Количество копий"
+#: genpattern.py:40
+msgid ""
+"Generate a random seamless patterned texture from layers with transparency "
+"using libgenpattern."
+msgstr ""
+"Сгенерировать случаюный бесшовный паттерн из слоёв с прозрачностью при "
+"помощи libgenpattern."
 
-#: genpattern.py:182
-msgid "Random pattern texture"
-msgstr "Случайный паттерн"
+#: genpattern.py:41
+msgid ""
+"Uses libgenpattern to compose a seamless patterned texture from transformed "
+"layers."
+msgstr ""
+"Использует libgenpattern чтобы сгенерировать паттерн из трансформированных "
+"слоёв."
 
-#: plugin.py:184 plugin.py:191
-msgid "Computed bounding polygon for layer"
-msgstr "Получен ограничивающий полигон для слоя"
+#: genpattern.py:45
+msgid "Copies per layer (default)"
+msgstr "Количество копий слоя (по умолчанию)"
 
-#: plugin.py:202
-msgid "Trying in grid node"
-msgstr "Попытка в узле сетки"
+#: genpattern.py:47
+msgid "Alpha channel threshold"
+msgstr "Порог альфа-канала"
 
-#: plugin.py:202 plugin.py:204 plugin.py:208
-msgid "of"
-msgstr "из"
+#: genpattern.py:49
+msgid "Min distance"
+msgstr "Минимальное расстояние"
 
-#: plugin.py:204
-msgid "Failed to place"
-msgstr "Не удалось разместить"
+#: genpattern.py:49
+msgid "Minimum distance between two layers"
+msgstr "Минимальное расстояние между двумя слоями"
 
-#: plugin.py:208
-msgid "Placed"
-msgstr "Размещён"
+#: genpattern.py:51
+msgid "Min distance (same layer copies)"
+msgstr "Минимальное расстояние между двумя слоями"
 
-#: ui.glade:80
-msgid "GIMP: Random pattern"
-msgstr "GIMP: Случайный паттерн"
+#: genpattern.py:52
+msgid "Minimum distance between two layers in the same collection"
+msgstr "Минимальное расстояние между двумя слоями в одной коллекции"
 
-#: ui.glade:159
-msgid "Allow horizontal reflection"
-msgstr "Разрешить отражение по горизонтали"
+#: genpattern.py:56
+msgid "Linear"
+msgstr "Линейный"
 
-#: ui.glade:174
-msgid "Same number of copies for each layer"
-msgstr "Одинаковое количество копий для каждого слоя"
+#: genpattern.py:57
+msgid "Exponential"
+msgstr "Экспоненциальный"
 
-#: ui.glade:206
-msgid "Grid resolution (px)"
-msgstr "Разрешение сетки (px)"
+#: genpattern.py:58
+msgid "Cooling schedule type"
+msgstr "Тип охлаждения"
 
-#: ui.glade:238
-msgid "Minimal padding for each figure (px)"
-msgstr "Минимальный отступ для каждой фигуры"
+#: genpattern.py:61
+msgid "Cooling schedule param"
+msgstr "Параметр охлаждения"
 
-#: ui.glade:251
-msgid "Bounding polygon alpha channel value threshold"
-msgstr "Пороговое значение альфа-канала"
+#: genpattern.py:63
+msgid "Max rotation angle"
+msgstr "Максимальный угол поворота"
 
-#: ui.glade:300
-msgid "Positioning move initial step (px)"
-msgstr "Изначальный шаг размещения (px)"
+#: genpattern.py:65
+msgid "Max scale factor"
+msgstr "Максимальный коэффициент масштабирования"
 
-#: ui.glade:333
-msgid "Maximal rotation angle (deg)"
-msgstr "Максимальный угол поворота (в градусах)"
+#: genpattern.py:67
+msgid "Random seed"
+msgstr "Случайное зерно"
 
-#: ui.glade:387
-msgid "Bounding polygon simplification level"
-msgstr "Уровень упрощения ограничивающего полигона"
+#: genpattern.py:70 genpattern.py:75 genpattern.py:80
+msgid "Pickle buffer"
+msgstr "Буфер Pickle"
 
-#: ui.glade:400
-msgid "Minimal distance between identical figures (px)"
-msgstr "Минимальное расстояние между одинаковыми фигурами"
+#: genpattern.py:71
+msgid ""
+"Pickle buffer containig layer tattoo id to configured number of copies map"
+msgstr ""
+"Буфер Pickle, содержащий соответствие tattoo id слоя - количество копий"
 
-#: ui.glade:432
-msgid "Minimization accuracy (px)"
-msgstr "Точность минимизации"
+#: genpattern.py:76
+msgid "Pickle buffer containig layer tattoo id to configured max angle map"
+msgstr ""
+"Буфер Pickle, содержащий соответствие tattoo id слоя - максимальный угол "
+"поворота"
 
-#: ui.glade:483
-msgid "Force closer placement when no space for proper distancing"
-msgstr "Разрешить размещение ближе когда нет места"
+#: genpattern.py:81
+msgid ""
+"Pickle buffer containig layer tattoo id to configured max scale factor map"
+msgstr ""
+"Буфер Pickle, содержащий соответствие tattoo id слоя - максимальный "
+"коэффициент масштабирования"
 
-#: ui.glade:526
-msgid "Run"
-msgstr "Запуск"
+#: genpattern.py:136
+msgid "Placing images..."
+msgstr "Размещение изображений..."
+
+#: genpattern.py:137
+msgid "Placing images: {} of {}"
+msgstr "Размещение изображений: {} из {}"
+
+#: genpattern.py:181
+msgid "Generating pattern..."
+msgstr "Генерация паттерна..."
+
+#: genpattern.py:194
+msgid "Error in gp_genpattern: {}"
+msgstr "Ошибка в gp_genpattern: {}"
+
+#: genpattern.py:218
+msgid "Error"
+msgstr "Ошибка"
+
+#: transformations.py:48
+msgid "Image does not contain any layers."
+msgstr "Изображение не содержит слоёв."
+
+#: transformations.py:62
+msgid "Preparing images..."
+msgstr "Подготовка изображений..."
+
+#: transformations.py:63
+msgid "Preparing images: {} of {}"
+msgstr "Подготовка изображений: {} из {}"
+

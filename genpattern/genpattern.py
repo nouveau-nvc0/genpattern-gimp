@@ -1,204 +1,223 @@
-#!/usr/bin/env python2
-import os
+#!/usr/bin/env python3
 import sys
-import locale
-import gettext
-from subprocess import check_call, CalledProcessError
 
-from gimpfu import *
-from gimpshelf import shelf
-import gtk
+from dict_over_bytes_property import DictOverBytesProperty
+from genpattern_dialog import GenPatternDialog
+from progress_window import ProgressWindow
+from transformations import perform_transformations
+from genpattern_lib import GPImgAlpha, gp_genpattern, GPExponentialSchedule, GPLinearSchedule
+from i18n import _
 
-dir_ = os.path.abspath(os.path.dirname(sys.argv[0]))
-sys.path.append(dir_)
+import gi
+gi.require_version('Gimp', '3.0')
+from gi.repository import Gimp, GLib
+gi.require_version('GimpUi', '3.0')
+from gi.repository import GimpUi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, GObject
 
-APP = 'genpattern'
-locale.setlocale(locale.LC_ALL, '')
-ldir = os.path.join(dir_, 'locale')
+class GenPatternPlugin(Gimp.PlugIn):
+    _config: Gimp.ProcedureConfig
+    _layer_copies: DictOverBytesProperty[int, int]
+    _layer_max_angle: DictOverBytesProperty[int, int]
+    _layer_max_scale: DictOverBytesProperty[int, float]
 
-if os.name == 'nt':
-    if os.getenv('LANG') is None:
-        lang, enc = locale.getdefaultlocale()
-        os.environ['LANG'] = lang
-    gettext.bindtextdomain(APP, ldir)
-    gettext.textdomain(APP)
-    lg = gettext.gettext
-else:
-    locale.bindtextdomain(APP, ldir)
-    locale.textdomain(APP)
-    lg = locale.gettext
+    def do_set_i18n(self, _: str) -> tuple[bool, str, None]:
+        return True, 'gimp30-python', None
 
-gen_pattern = None
+    def do_query_procedures(self) -> list[str]:
+        return ['plug-in-genpattern']
 
-
-class Plugin:
-    _layerData = []
-    _selectedLayer = 0
-    _layersCopies = []
-
-    def _progress_callback(self, text, fraction):
-        self._progressbar.set_text(text)
-        self._progressbar.set_fraction(fraction)
-        while gtk.events_pending():
-            gtk.main_iteration()
-
-    def _setLayer(self):
-        self._selectedLayerLabel.set_text('%s "%s"' % (lg('Number of copies of layer'), self._layersStore[self._selectedLayer][1]))
-        self._copiesNumberEntry.set_text(str(self._layersCopies[self._selectedLayer]))
-
-    def _layerSelectHandler(self, view):
-        self._copiesNumberChanged()
-        try:
-            self._selectedLayer = view.get_selected_items()[0][0]
-        except IndexError:
-            return
-        if not self._sameCopies.get_active():
-            self._setLayer()
-
-    def _setSameCopies(self):
-        copies = int(self._copiesNumberEntry.get_text())
-        for i in range(len(self._layersCopies)):
-            self._layersCopies[i] = copies
-
-    def _copiesNumberChanged(self):
-        if self._sameCopies.get_active():
-            self._setSameCopies()
-        else:
-            self._layersCopies[self._selectedLayer] = int(self._copiesNumberEntry.get_text())
-
-    def _toggleSameCopies(self, checkButton):
-        if checkButton.get_active():
-            self._setSameCopies()
-            self._selectedLayerLabel.set_text(lg('Number of copies'))
-        else:
-            self._setLayer()
-
-    def _initParams(self):
-        if not shelf.has_key('params'):
-            return
-        self._boundingRectThreshold.set_text(str(shelf['params'][0]))
-        if len(self._img.layers) == len(shelf['params'][1]):
-            self._layersCopies = shelf['params'][1]
-        self._allowReflection.set_active(shelf['params'][2])
-        self._minPadding.set_text(str(shelf['params'][3]))
-        self._gridResolution.set_text(str(shelf['params'][4]))
-        self._maxAngle.set_value(shelf['params'][5])
-        self._simpLevel.set_value(shelf['params'][6])
-        self._initialStep.set_value(shelf['params'][7])
-        self._minDistance.set_text(str(shelf['params'][8]))
-        self._forceCloser.set_active(shelf['params'][9])
-        self._accuracy.set_text(str(shelf['params'][10]))
-
-    def run(self, img, _):
-        builder = gtk.Builder()
-        builder.set_translation_domain('genpattern')
-        xml_path = os.path.join(dir_, 'ui.glade')
-        if os.name == 'nt':
-            from translatexml import translate_xml
-            translated_xml = translate_xml(xml_path)
-            builder.add_from_string(translated_xml)
-        else:
-            builder.add_from_file(xml_path)
-        self._window = builder.get_object('mainwindow')
-        self._window.connect('destroy', gtk.main_quit)
+    def do_create_procedure(self, procedure_name: str) -> Gimp.ImageProcedure:
+        procedure = Gimp.ImageProcedure.new(self, procedure_name, Gimp.PDBProcType.PLUGIN, self._run, None)
+        procedure.set_image_types('*')
+        procedure.set_sensitivity_mask(Gimp.ProcedureSensitivityMask.DRAWABLE)
+        procedure.set_menu_label(_('Random pattern...'))
+        procedure.set_icon_name('gimp')
+        procedure.add_menu_path('<Image>/Filters/Artistic/')
+        procedure.set_documentation(
+            _('Generate a random seamless patterned texture from layers with transparency using libgenpattern.'),
+            _('Uses libgenpattern to compose a seamless patterned texture from transformed layers.'),
+            procedure_name)
+        procedure.set_attribution('Arkadii Chekha', 'Arkadii Chekha', '2025')
         
-        try:
-            global gen_pattern
-            from plugin import layer_data, gen_pattern
-        except ImportError:
-            if os.name == 'nt':
-                try:
-                    check_call([sys.executable.replace('pythonw.exe', 'python.exe'), '-m', 'easy_install',
-                                'https://github.com/platofff/genpattern-gimp/releases/download/v1.0/numpy-1.16.6-py2.7-mingw.egg',
-                                'https://github.com/platofff/genpattern-gimp/releases/download/v1.0/Shapely-1.7.1-py2.7-mingw.egg'])
-                    msg = 'Required packages were installed. Please run plugin again.'
-                except CalledProcessError as e:
-                    msg = '"Shapely" and "numpy" installation failed.\nReturn code: %d.\n' \
-                          'You should try to install them manually.' % e.returncode
+        procedure.add_int_argument('copies', _('Copies per layer (default)'), _('Copies per layer (default)'),
+                                     1, GLib.MAXINT, 5, GObject.ParamFlags.READWRITE)
+        procedure.add_int_argument('threshold', _('Alpha channel threshold'), _('Alpha channel threshold'),
+                                     1, 255, 64, GObject.ParamFlags.READWRITE)
+        procedure.add_int_argument('offset-radius', _('Min distance'), _('Minimum distance between two layers'),
+                                     0, GLib.MAXINT, 5, GObject.ParamFlags.READWRITE)
+        procedure.add_int_argument('coll-offset-radius', _('Min distance (same layer copies)'),
+                                   _('Minimum distance between two layers in the same collection'),
+                                     0, GLib.MAXINT, 20, GObject.ParamFlags.READWRITE)
+        
+        schedule_choice = Gimp.Choice()
+        schedule_choice.add('Linear', 0, _('Linear'), 'Linear cooling schedule')
+        schedule_choice.add('Exponential', 1, _('Exponential'), 'Exponential cooling schdeule')
+        procedure.add_choice_argument('sch-type', _('Cooling schedule type'), _('Cooling schedule type'), 
+                                      schedule_choice, 'Exponential', GObject.ParamFlags.READWRITE)
+        
+        procedure.add_double_argument('sch-param', _('Cooling schedule param'), _('Cooling schedule param'),
+                                      0.00001, 0.99999, 0.9, GObject.ParamFlags.READWRITE)
+        procedure.add_int_argument('max-angle', _('Max rotation angle'), _('Max rotation angle'),
+                                   0, 180, 60, GObject.ParamFlags.READWRITE)
+        procedure.add_double_argument('max-scale', _('Max scale factor'), _('Max scale factor'),
+                                      0.0, GLib.MAXDOUBLE, 3.0, GObject.ParamFlags.READWRITE)
+        procedure.add_int_argument('seed', _('Random seed'), _('Random seed'),
+                                     0, min(GLib.MAXINT, GLib.MAXUINT32), 42, GObject.ParamFlags.READWRITE)
+        
+        procedure.add_bytes_argument('copies-per-layer', _('Pickle buffer'),
+                                     _('Pickle buffer containig layer tattoo id to configured number of copies map'),
+                                     GObject.ParamFlags.READWRITE)
+        procedure.set_argument_sync('copies-per-layer', Gimp.ArgumentSync.PARASITE)
+
+        procedure.add_bytes_argument('max-angle-per-layer', _('Pickle buffer'),
+                                _('Pickle buffer containig layer tattoo id to configured max angle map'),
+                                GObject.ParamFlags.READWRITE)
+        procedure.set_argument_sync('max-angle-per-layer', Gimp.ArgumentSync.PARASITE)
+
+        procedure.add_bytes_argument('max-scale-per-layer', _('Pickle buffer'),
+                                _('Pickle buffer containig layer tattoo id to configured max scale factor map'),
+                                GObject.ParamFlags.READWRITE)
+        procedure.set_argument_sync('max-scale-per-layer', Gimp.ArgumentSync.PARASITE)
+
+        return procedure
+    
+    def _run(self, procedure: Gimp.Procedure,
+             run_mode: Gimp.RunMode,
+             image: Gimp.Image,
+             drawables: list[Gimp.Drawable],
+             config: Gimp.ProcedureConfig,
+             data: object | None) -> Gimp.ValueArray:
+        self._config = config
+        self._layer_copies = DictOverBytesProperty(config, 'copies-per-layer')
+        self._layer_max_angle = DictOverBytesProperty(config, 'max-angle-per-layer')
+        self._layer_max_scale = DictOverBytesProperty(config, 'max-scale-per-layer')
+        
+        if run_mode == Gimp.RunMode.INTERACTIVE:
+            GimpUi.init('plug-in-genpattern-ui')
+            
+            dialog = GenPatternDialog(procedure, image, config, self._layer_copies, self._layer_max_angle, self._layer_max_scale)
+            dialog.show_all()
+            if not dialog.run():
+                dialog.destroy()
+                return procedure.new_return_values(Gimp.PDBStatusType.CANCEL, GLib.Error())
             else:
-                msg = 'Please install "Shapely" and "numpy" packages into your Python 2 environment'
-            md = gtk.MessageDialog(self._window, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_INFO, gtk.BUTTONS_CLOSE,
-                                   msg)
-            md.connect('destroy', gtk.main_quit)
-            md.run()
-            md.destroy()
+                dialog.destroy()
 
-        self._img = img
-        self._progressbar = builder.get_object('progressbar')
-        self._sameCopies = builder.get_object('same_copies')
-        self._boundingRectThreshold = builder.get_object('bounding_rect_threshold')
-        self._allowReflection = builder.get_object('allow_reflection')
-        self._minPadding = builder.get_object('min_padding')
-        self._selectedLayerLabel = builder.get_object('selected_layer')
-        self._copiesNumberEntry = builder.get_object('copies_number')
-        self._gridResolution = builder.get_object('grid_resolution')
-        self._maxAngle = builder.get_object('max_angle')
-        self._forceCloser = builder.get_object('force_closer')
-        self._simpLevel = builder.get_object('simp_level')
-        self._initialStep = builder.get_object('initial_step')
-        self._minDistance = builder.get_object('min_distance')
-        self._accuracy = builder.get_object('accuracy')
+        Gimp.context_push()
+        image.undo_group_start()
 
-        self._sameCopies.connect('toggled', self._toggleSameCopies)
+        orig_layers, collections, transformed_layers = perform_transformations(image,
+                                                                               config.get_property('copies'),
+                                                                               self._layer_copies,
+                                                                               self._layer_max_angle,
+                                                                               self._layer_max_scale,
+                                                                               config.get_property('max-angle'),
+                                                                               config.get_property('max-scale'),
+                                                                               config.get_property('seed'))
+        self._start(image, orig_layers, collections, transformed_layers)
+        return procedure.new_return_values(Gimp.PDBStatusType.SUCCESS, GLib.Error())
 
-        layersView = builder.get_object('layers_view')
-        layersView.set_pixbuf_column(0)
-        layersView.set_text_column(1)
-        for layer in img.layers:
-            self._layersCopies.append(5)
-            self._layerData.append(layer_data(layer))
+    def _place_images(self,
+                      image: Gimp.Image,
+                      orig_layers: list[Gimp.Layer],
+                      transformed_layers: list[Gimp.Layer],
+                      result: list[list[list[tuple[int, int]]]]) -> None:
+        total_placements = 0
+        for col in result:
+            for coords in col:
+                if coords:
+                    total_placements += len(coords)
+        if total_placements == 0:
+            total_placements = 1
 
-        self._layersStore = builder.get_object('layers_store')
-        for i, layer in enumerate(self._layerData):
-            height, width, _ = layer.shape
-            pixbuf = gtk.gdk.pixbuf_new_from_data(layer.flatten('C').tobytes(), gtk.gdk.COLORSPACE_RGB,
-                                                  True, 8, width, height, width * 4)
+        placement_window = ProgressWindow(_('Placing images...'),
+                                          _('Placing images: {} of {}'),
+                                          total_placements)
+        placement_window.show()
 
-            res_width = int(round(float(img.layers[i].width) / float(img.layers[i].height) * 64.0))
-            res_pixbuf = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, True, 8, res_width, 64)
-            pixbuf.scale(res_pixbuf, 0, 0, res_width, 64, 0, 0, float(res_width) / width, 64.0 / height,
-                         gtk.gdk.INTERP_NEAREST)
-            self._layersStore.append([res_pixbuf, img.layers[i].name[:25]])
-        layersView.connect('selection-changed', self._layerSelectHandler)
-        builder.get_object('run_button').connect('clicked', self._runButtonHandler)
-        self._window.show_all()
-        self._initParams()
-        self._setLayer()
-        gtk.main()
+        counter = 0
+        idx = 0
+        for col in result:
+            for coords in col:
+                t_layer = transformed_layers[idx]
+                idx += 1
+                if not coords:
+                    if t_layer in image.get_layers():
+                        image.remove_layer(t_layer)
+                else:
+                    first = True
+                    for (x, y) in coords:
+                        if first:
+                            t_layer.set_offsets(x, y)
+                            first = False
+                        else:
+                            copy_layer = t_layer.copy()
+                            copy_layer.set_offsets(x, y)
+                            image.insert_layer(copy_layer, None, 0)
+                        counter += 1
+                        placement_window.update_value(counter)
+        placement_window.destroy()
+        for layer in orig_layers:
+            if layer in image.get_layers():
+                image.remove_layer(layer)
 
-    def _runButtonHandler(self, btn):
-        btn.set_sensitive(False)
-        self._copiesNumberChanged()
-        shelf['params'] = (
-                            int(self._boundingRectThreshold.get_text()),
-                            self._layersCopies,
-                            self._allowReflection.get_active(),
-                            int(self._minPadding.get_text()),
-                            int(self._gridResolution.get_text()),
-                            int(self._maxAngle.get_value()),
-                            float(self._simpLevel.get_value()),
-                            int(self._initialStep.get_value()),
-                            int(self._minDistance.get_text()),
-                            self._forceCloser.get_active(),
-                            int(self._accuracy.get_text()),
-                        )
-        gen_pattern(self._img, *shelf['params'], progress_callback=self._progress_callback)
-        self._window.destroy()
+    def _start(self,
+               image: Gimp.Image,
+               orig_layers: list[Gimp.Layer],
+               collections: list[list[GPImgAlpha]],
+               transformed_layers: list[Gimp.Layer]) -> None:
+        canvas_w = image.get_width()
+        canvas_h = image.get_height()
 
+        schedule: GPExponentialSchedule | GPLinearSchedule
+        if self._config.get_property('sch-type') == 'Exponential':
+            schedule = GPExponentialSchedule(self._config.get_property('sch-param'))
+        else:
+            schedule = GPLinearSchedule(self._config.get_property('sch-param'))
 
-plugin = Plugin()
+        progress_window = ProgressWindow(_('Generating pattern...'), _('Generating pattern...'))
+        progress_window.show()
+        
+        main_loop = GLib.MainLoop()
 
-register(
-    "python_fu_genpattern",
-    "Make a random pattern texture from layers with transparent background",
-    "Make a random pattern texture from layers with transparent background",
-    "platofff",
-    "platofff",
-    "2022",
-    "<Image>/Filters/Artistic/%s..." % lg('Random pattern texture'),
-    "RGBA",
-    [],
-    [],
-    plugin.run)
+        def worker(argument: None) -> None:
+            res = None
+            try:
+                res = gp_genpattern(collections, canvas_w, canvas_h,
+                                    self._config.get_property('threshold'), self._config.get_property('offset-radius'),
+                                    self._config.get_property('coll-offset-radius'), schedule, self._config.get_property('seed'))
+            except Exception as e:
+                exception_text = str(e)
+                self._error_msg(_('Error in gp_genpattern: {}').format(exception_text))
+            GLib.idle_add(on_genpattern_complete, res)
+            return None
 
-main()
+        def on_genpattern_complete(result: list[list[list[tuple[int, int]]]] | None) -> bool:
+            if result is not None:
+                self._place_images(image, orig_layers, transformed_layers, result)
+            Gimp.displays_flush()
+            progress_window.destroy()
+            Gimp.Selection.none(image)
+            image.undo_group_end()
+            Gimp.context_pop()
+            main_loop.quit()
+            return False
+
+        GLib.Thread.new('gp_genpattern_worker', worker, None)
+        main_loop.run()
+
+    @staticmethod
+    def _error_msg(msg: str) -> None:
+        dialog = Gtk.MessageDialog(
+            transient_for=None,
+            message_type=Gtk.MessageType.ERROR,
+            buttons=Gtk.ButtonsType.OK,
+            text=_('Error')
+        )
+        dialog.format_secondary_text(msg)
+        dialog.run()
+        dialog.destroy()
+
+Gimp.main(GenPatternPlugin.__gtype__, sys.argv)

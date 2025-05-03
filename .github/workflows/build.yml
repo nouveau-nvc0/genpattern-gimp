@@ -1,0 +1,39 @@
+name: Build & Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute version tag
+        id: version
+        run: echo "TAG=$(date -u +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Build dist
+        run: python build.py
+
+      - name: Pack archives
+        run: |
+          cd dist
+          tar -czf genpattern-gimp.linux_x86_64.tar.gz -C linux_x86_64 genpattern
+          tar -czf genpattern-gimp.linux_arm64.tar.gz -C linux_arm64 genpattern
+          (cd windows_x86_64 && zip -r ../genpattern-gimp.windows_x64.zip genpattern)
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Release ${{ steps.version.outputs.TAG }}"
+          body: "Automatically created release for ${{ steps.version.outputs.TAG }}"
+          files: |
+            dist/genpattern-gimp.linux_x86_64.tar.gz
+            dist/genpattern-gimp.linux_arm64.tar.gz
+            dist/genpattern-gimp.windows_x64.zip

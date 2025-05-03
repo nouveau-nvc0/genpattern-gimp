@@ -1,15 +1,16 @@
-# Random pattern texture generation plugin for GIMP
+# Random Seamless Pattern Texture Generation Plugin for GIMP 3
+
 ![Illustration](illustration.webp)
 
 ### Usage
 
-At first, place the figures on the canvas and enlarge it to desired size. Then select `Filters->Artistic->Random pattern texture...`
+First, place your figures on the canvas and resize it to the desired dimensions.
+Then choose **Filters → Artistic → Random Pattern…**
 
 ![Screenshot](screenshot.webp)
 
 ### Installation
-Make sure you've installed the `pip` package manager for your GIMP's Python 2 installation (GIMP on Linux usually uses systemwide Python 2).
 
-Then run `python -m pip install -r requirements.txt` to install plugin's dependencies.
-
-Finally, place `genpattern` directory from this repo into your GIMP's `plug-ins` directory.
+1. Download the archive for your OS from the [releases section](https://github.com/nouveau-nvc0/genpattern-gimp/releases).
+2. Unpack it into your **plug-ins** directory.
+   You can find that folder via **Edit → Preferences → Folders → Plug-ins**.
