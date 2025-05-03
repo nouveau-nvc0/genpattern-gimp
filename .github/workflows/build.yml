@@ -1,9 +1,8 @@
 name: Build & Release
 
 on:
-  workflow_dispatch:
   push:
-    branches: [main]
+    tags: ['v*.*.*']
 
 jobs:
   build-release:
@@ -13,10 +12,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Compute version tag
-        id: version
-        run: echo "TAG=$(date -u +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
 
       - name: Build dist
         run: python build.py
@@ -31,8 +26,8 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Release ${{ steps.version.outputs.TAG }}"
-          body: "Automatically created release for ${{ steps.version.outputs.TAG }}"
+          name: "Release ${{ github.ref_name }}"
+          body: "Automatically created release for ${{ github.ref_name }}"
           files: |
             dist/genpattern-gimp.linux_x86_64.tar.gz
             dist/genpattern-gimp.linux_arm64.tar.gz
